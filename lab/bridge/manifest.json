@@ -1,0 +1,10 @@
+{
+  "display_name": "锻卡炉测试桥",
+  "loading_order": 200,
+  "js": "index.js",
+  "author": "Card Forge",
+  "version": "0.1.0",
+  "requires": [],
+  "optional": [],
+  "auto_update": false
+}

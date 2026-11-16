@@ -1,0 +1,23 @@
+{
+  "_说明": "复制为 config.json 后修改。所有键都可用同名大写环境变量覆盖（如 FREE_BASE_URL）。密钥只留在服务端，不会下发给浏览器。",
+  "port": 8787,
+  "host": "127.0.0.1",
+
+  "freeBaseUrl": "https://your-newapi-gateway.example.com/v1",
+  "freeApiKey": "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
+  "freeModel": "glm-4.7",
+  "freeDisplayName": "站内免费模型",
+
+  "_防滥用": "每 IP 每分钟请求数 / 每 IP 每日请求总额度，超额返回 429 并引导用户填自己的 key。",
+  "ratePerMinute": 6,
+  "dailyRequestsPerIp": 30,
+
+  "_输出上限": "免费通道单次请求允许的最大输出 token，转发时钳制 max_tokens。",
+  "freeMaxOutputTokens": 32768,
+
+  "_访问码": "可选；留空 = 公开。设置后前端请求 /api 需在设置页填入相同访问码。",
+  "accessCode": "",
+
+  "_反代": "nginx 反代后按 X-Forwarded-For 取真实 IP。",
+  "trustProxy": true
+}

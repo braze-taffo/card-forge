@@ -1,0 +1,16 @@
+{
+  "name": "card-forge",
+  "version": "0.0.0",
+  "private": true,
+  "description": "锻卡炉：从服务器当前运行版本整理的项目",
+  "scripts": {
+    "start": "node server/index.mjs",
+    "check": "bash scripts/check.sh",
+    "build": "bash scripts/build.sh",
+    "test": "bash scripts/test.sh",
+    "audit:sensitive": "python3 scripts/audit-sensitive.py"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

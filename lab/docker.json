@@ -1,0 +1,1 @@
+{"data-root": "/opt/card-forge-lab/docker-data", "exec-root": "/run/card-forge-lab-docker", "pidfile": "/run/card-forge-lab-docker.pid", "hosts": ["unix:///run/card-forge-lab-docker.sock"], "storage-driver": "overlay2", "features": {"containerd-snapshotter": false}, "log-driver": "local", "log-opts": {"max-size": "10m", "max-file": "2"}}

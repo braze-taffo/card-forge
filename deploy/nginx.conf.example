@@ -1,0 +1,37 @@
+# 锻卡炉 nginx 反代示例。
+# 假设：web/dist 已构建，后端 node index.mjs 监听 127.0.0.1:8787，域名 card.example.com。
+
+server {
+    listen 443 ssl http2;
+    server_name card.example.com;
+
+    # ssl_certificate     /etc/letsencrypt/live/card.example.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/card.example.com/privkey.pem;
+
+    client_max_body_size 25m;
+
+    # SSE 代理关键：关闭缓冲，否则流式输出会被 nginx 攒住
+    location /api/ {
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 360s;
+        chunked_transfer_encoding on;
+    }
+
+    # 静态前端（也可完全交给 node 服务托管；二选一）
+    location / {
+        root /opt/card-forge/web/dist;
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+server {
+    listen 80;
+    server_name card.example.com;
+    return 301 https://$host$request_uri;
+}
