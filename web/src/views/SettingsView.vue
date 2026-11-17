@@ -104,6 +104,12 @@ async function testConnection() {
         <p class="muted privacy">{{ S.privacyHint }}</p>
       </template>
 
+      <p class="muted" role="status">
+        联网搜索：{{ state.serverConfig.webSearchAvailable ? '可用，agent 可按需搜索参考资料' : '暂不可用，等待管理员配置' }}。
+        自带 API 和站内免费模型均可使用。
+        <span v-if="state.serverConfig.webSearchAvailable">每 IP 每分钟 {{ state.serverConfig.webSearchRatePerMinute }} 次，每日 {{ state.serverConfig.webSearchDailyRequestsPerIp }} 次，与创作模型额度分别计算。</span>
+      </p>
+
       <label v-if="state.serverConfig.accessCodeRequired" class="field">
         <span>访问码</span>
         <input v-model="accessCode" type="password" autocomplete="off" />

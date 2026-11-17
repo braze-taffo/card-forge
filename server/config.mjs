@@ -42,6 +42,10 @@ export function loadConfig() {
     // 免费模型上游（OpenAI 兼容网关，例如 New API）。
     freeBaseUrl: pick('FREE_BASE_URL', fileConfig.freeBaseUrl, ''),
     freeApiKey: pick('FREE_API_KEY', fileConfig.freeApiKey, ''),
+    // 全局联网搜索使用独立的 DeepSeek 官方密钥，与创作模型通道无关。
+    deepseekApiKey: pick('DEEPSEEK_API_KEY', fileConfig.deepseekApiKey, ''),
+    webSearchRatePerMinute: pickInt('WEB_SEARCH_RATE_PER_MINUTE', fileConfig.webSearchRatePerMinute, 6),
+    webSearchDailyRequestsPerIp: pickInt('WEB_SEARCH_DAILY_REQUESTS_PER_IP', fileConfig.webSearchDailyRequestsPerIp, 30),
     freeModel: freeModels[0]?.id || '',
     freeModels,
     freeDisplayName: pick('FREE_DISPLAY_NAME', fileConfig.freeDisplayName, '站内免费模型'),

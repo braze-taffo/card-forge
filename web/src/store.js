@@ -20,6 +20,7 @@ import { downloadJson, downloadPng } from './lib/download.js'
 import { pngObjectUrl } from './lib/image.js'
 import { receivedTurns, waitForChoice } from './lib/conversation-state.js'
 import { attachReference, continueFromSession, embedReferenceEntries } from './lib/workflow.js'
+import { searchWeb } from './lib/web-search.js'
 
 const SETTINGS_KEY = 'cardforge.settings'
 
@@ -61,7 +62,7 @@ export const state = reactive({
   pendingQuestion: null,
   error: null,
   info: null,
-  serverConfig: { freeModelAvailable: false, freeDisplayName: '', freeModels: [], dailyRequestsPerIp: 0, ratePerMinute: 0, accessCodeRequired: false },
+  serverConfig: { freeModelAvailable: false, freeDisplayName: '', freeModels: [], dailyRequestsPerIp: 0, ratePerMinute: 0, accessCodeRequired: false, webSearchAvailable: false },
   settings: loadSettings(),
 })
 
@@ -229,7 +230,7 @@ async function engineGenerate(messages, temperature, onProgress, phasePrefix = '
     messages: messages.map((m) => ({ ...m })),
     temperature,
     maxTokens: 128_000,
-    tools: creationNativeTools(),
+    tools: creationNativeTools({ webSearchAvailable: state.serverConfig.webSearchAvailable }),
     signal: generationController?.signal,
     onDelta: (piece) => {
       if (piece.text) output += piece.text
@@ -486,6 +487,8 @@ async function runConversation(text, resume) {
       userText: text.trim(),
       generate: engineGenerate,
       readSource: () => db.readSource(context.id, context.sourceSha256),
+      searchWeb: state.serverConfig.webSearchAvailable
+        ? (args, options) => searchWeb(args, { ...options, headers: acceptCodeHeader() }) : undefined,
       onProgress: (update) => {
         showModelProgress(update)
         if (update.requestStarted) {

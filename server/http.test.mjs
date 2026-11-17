@@ -32,7 +32,7 @@ test('HTTP 后台鉴权、跨站拒绝、即时停用和独立模型额度', asy
   const port = reservation.address().port
   await new Promise(resolve => reservation.close(resolve))
   const child = spawn(process.execPath,[fileURLToPath(new URL('./index.mjs',import.meta.url))], {
-    env:{...process.env,PORT:String(port),HOST:'127.0.0.1',DATA_DIR:directory,ADMIN_CREDENTIALS_FILE:credentials,ACCESS_CODE:'',FREE_API_KEY:'test-key',FREE_BASE_URL:`http://127.0.0.1:${upstream.address().port}/v1`,FREE_MODELS:JSON.stringify([{id:'step',name:'Step',ratePerMinute:10,dailyRequestsPerIp:1},{id:'deepseek',name:'DeepSeek',ratePerMinute:10,dailyRequestsPerIp:2}])},
+    env:{...process.env,PORT:String(port),HOST:'127.0.0.1',DATA_DIR:directory,ADMIN_CREDENTIALS_FILE:credentials,ACCESS_CODE:'',DEEPSEEK_API_KEY:'search-test-key',FREE_API_KEY:'test-key',FREE_BASE_URL:`http://127.0.0.1:${upstream.address().port}/v1`,FREE_MODELS:JSON.stringify([{id:'step',name:'Step',ratePerMinute:10,dailyRequestsPerIp:1},{id:'deepseek',name:'DeepSeek',ratePerMinute:10,dailyRequestsPerIp:2}])},
     stdio:['ignore','pipe','pipe'],
   })
   context.after(async () => {
@@ -63,6 +63,8 @@ test('HTTP 后台鉴权、跨站拒绝、即时停用和独立模型额度', asy
   const publicConfig = await (await call('/api/config')).json()
   assert.equal(publicConfig.freeModels[0].dailyRequestsPerIp,1)
   assert.ok(!JSON.stringify(publicConfig).includes('test-key'))
+  assert.equal(publicConfig.webSearchAvailable, true)
+  assert.equal((await call('/api/tools/web-search', 'POST', { query: ' ' })).status, 400)
   const chat = model => call('/api/v1/chat/completions','POST',{model,messages:[{role:'user',content:'OK'}]})
   await (await call('/')).text()
   await (await call('/')).text()

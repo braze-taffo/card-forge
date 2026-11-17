@@ -8,6 +8,11 @@
   "freeModel": "glm-4.7",
   "freeDisplayName": "站内免费模型",
 
+  "_联网搜索": "全局工具，适用于自带 API 与免费模型。使用独立 DeepSeek 官方密钥；留空则不启用。",
+  "deepseekApiKey": "",
+  "webSearchRatePerMinute": 6,
+  "webSearchDailyRequestsPerIp": 30,
+
   "_防滥用": "每 IP 每分钟请求数 / 每 IP 每日请求总额度，超额返回 429 并引导用户填自己的 key。",
   "ratePerMinute": 6,
   "dailyRequestsPerIp": 30,

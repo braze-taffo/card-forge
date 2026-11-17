@@ -301,7 +301,7 @@ export function parseNativeCreationCalls(calls) {
 export function renderToolResult(result, index) {
   const safeName = /^[A-Za-z_][A-Za-z_0-9]{0,63}$/.test(result.name) ? result.name : 'unknown'
   return `<tool_result index="${index}" name="${safeName}" ok="${result.ok ? 'true' : 'false'}">` +
-    JSON.stringify(result.payload) + '</tool_result>'
+    JSON.stringify(result.payload).replace(/</g, '\\u003c') + '</tool_result>'
 }
 
 /** 原生调用回放为文本工具块，让下一轮请求看到模型自己发过的调用。 */
@@ -349,6 +349,7 @@ export function toolEventDetail(result) {
       return found != null && miss != null ? `found ${found}, miss ${miss}` : ''
     }
     case 'search_source': return `命中 ${count('matches') ?? 0} 处`
+    case 'web_search': return `${payload.query || '联网搜索'} · ${count('results') ?? 0} 条来源`.slice(0, 100)
     case 'read_source': return `${payload.start ?? 0}..${payload.end ?? 0} / ${payload.total_length ?? 0} 字符`
     case 'set_card_fields':
       return (Array.isArray(payload.applied) ? payload.applied.filter((x) => typeof x === 'string') : [])
@@ -376,12 +377,12 @@ export function toolEventDetail(result) {
 }
 
 /** 原生 creation_tool 的 JSON Schema（保持单函数，跨中转兼容面最小）。 */
-export function creationNativeTools() {
+export function creationNativeTools({ webSearchAvailable = false } = {}) {
   return [{
     type: 'function',
     function: {
       name: 'creation_tool',
-      description: 'Read or update the current character card/world book draft. Tool names and arguments are described in the system message.',
+      description: 'Read or update the current character card/world book draft, or search reference material with available tools. Tool names and arguments are described in the system message.',
       parameters: {
         type: 'object',
         properties: {
@@ -390,6 +391,7 @@ export function creationNativeTools() {
             enum: [
               'read_card', 'list_lore', 'read_lore', 'set_card_fields', 'upsert_lore', 'remove_lore',
               'search_source', 'read_source',
+              ...(webSearchAvailable ? ['web_search'] : []),
               'read_reference', 'list_reference_lore', 'read_reference_lore',
               'list_assets', 'read_script', 'upsert_script', 'read_regex', 'upsert_regex',
               'read_variables', 'set_variables', 'remove_asset', 'ask_user',

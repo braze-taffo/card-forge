@@ -6,11 +6,12 @@ import { buildCreationSystemPrompt } from './creation-prompts.js'
 import { reasoningFromResponse, splitReasoning } from './reasoning.js'
 import {
   parseToolCallBlocks, parseNativeCreationCalls, proseWithoutToolBlocks,
-  renderToolCallReplay, parseAskUserQuestion, toolEventDetail, creationNativeTools,
+  renderToolCallReplay, renderToolResult, parseAskUserQuestion, toolEventDetail,
 } from './tool-protocol.js'
 import { ToolBox } from './toolbox.js'
 import { normalizeLore, withAssignedLoreIds } from './models.js'
 import { executeSourceTool } from './source-tools.js'
+import { executeWebSearch } from './web-search.js'
 
 export const TOOL_ROUND_LIMIT = 32
 export const TOOL_ROUND_WARNING_FROM = 30
@@ -161,7 +162,7 @@ export function creationConversationContext(session) {
  * 一轮创作对话：最终回复文本 + 应用全部写入后的草稿。
  * generate: (messages, temperature, onDelta) => RawGeneration 形状的 Promise
  */
-export async function converse({session, userText, generate, readSource, onProgress = () => {}, onCheckpoint = () => {}, onToolEvent, onAskUser, signal, resume = false}) {
+export async function converse({session, userText, generate, readSource, searchWeb, onProgress = () => {}, onCheckpoint = () => {}, onToolEvent, onAskUser, signal, resume = false}) {
   session = withAssignedLoreIds(session)
   let source
   const loadSource = async () => {
@@ -172,7 +173,7 @@ export async function converse({session, userText, generate, readSource, onProgr
   const opener = creationConversationContext(session)
   const saved = resume ? session.pendingRun : null
   const history = saved?.history ? cloneConversation(saved.history) : [
-    { role: 'system', content: buildCreationSystemPrompt(session.kind, session.kind === 'WorldBook' && session.originalCard != null) },
+    { role: 'system', content: buildCreationSystemPrompt(session.kind, session.kind === 'WorldBook' && session.originalCard != null, Boolean(searchWeb)) },
     { role: 'user', content: `${opener}用户本轮：\n${userText}` },
   ]
   const toolbox = new ToolBox(session)
@@ -292,11 +293,12 @@ export async function converse({session, userText, generate, readSource, onProgr
         }
       } else if (block.call.name === 'read_source' || block.call.name === 'search_source') {
         result = await executeSourceTool(block.call, toolbox.session, loadSource)
+      } else if (block.call.name === 'web_search') {
+        result = await executeWebSearch(block.call, searchWeb, signal)
       } else {
         result = toolbox.execute(block.call)
       }
-      const safeName = /^[A-Za-z_][A-Za-z_0-9]{0,63}$/.test(result.name) ? result.name : 'unknown'
-      feedback.push(`<tool_result index="${blockIndex + 1}" name="${safeName}" ok="${result.ok ? 'true' : 'false'}">${JSON.stringify(result.payload)}</tool_result>`)
+      feedback.push(renderToolResult(result, blockIndex + 1))
       onToolEvent?.({
         round, index: blockIndex + 1, name: result.name, ok: result.ok,
         detail: toolEventDetail(result),

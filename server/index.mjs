@@ -11,12 +11,15 @@ import { createAnalytics, UsageObserver } from './analytics.mjs'
 import { isIP } from 'node:net'
 import { createRelayAnalytics } from './relay-analytics.mjs'
 import { createLab } from './lab.mjs'
+import { createWebSearch } from './web-search.mjs'
 
 const config = loadConfig()
 const admin = createAdmin(config)
 const analytics = createAnalytics(config)
 const relayAnalytics = createRelayAnalytics(config)
 const lab = createLab(config, { readBody, sendJson, clientIp })
+const handleWebSearch = createWebSearch(config, { readBody, sendJson, clientIp,
+  rateLimitGate, dailyQuotaGate, reserveDailyQuota, consumeDailyQuota })
 
 if (!config.freeBaseUrl || !config.freeApiKey || !config.freeModel) {
   console.warn('[card-forge] 未配置免费模型（FREE_BASE_URL / FREE_API_KEY / FREE_MODEL），'
@@ -124,6 +127,19 @@ function consumeDailyQuota(ip, model) {
   const key = quotaKey(ip, model)
   dailyQuota[todayKey()][key] = (dailyQuota[todayKey()][key] || 0) + 1
   quotaDirty = true
+}
+
+function reserveDailyQuota(ip, model) {
+  const key = quotaKey(ip, model)
+  pendingDaily.set(key, (pendingDaily.get(key) || 0) + 1)
+  let reserved = true
+  return () => {
+    if (!reserved) return
+    reserved = false
+    const remaining = (pendingDaily.get(key) || 1) - 1
+    if (remaining) pendingDaily.set(key, remaining)
+    else pendingDaily.delete(key)
+  }
 }
 
 // ---------------------------------------------------------------- 工具函数
@@ -234,16 +250,7 @@ async function handleChatCompletions(req, res) {
   let outcome = 'failed'
   const onClose = () => { if (!res.writableFinished) { disconnected = true; controller.abort() } }
   res.on('close', onClose)
-  const pendingKey = quotaKey(ip, selectedModel)
-  pendingDaily.set(pendingKey, (pendingDaily.get(pendingKey) || 0) + 1)
-  let reservation = true
-  const releaseReservation = () => {
-    if (!reservation) return
-    reservation = false
-    const remaining = (pendingDaily.get(pendingKey) || 1) - 1
-    if (remaining) pendingDaily.set(pendingKey, remaining)
-    else pendingDaily.delete(pendingKey)
-  }
+  const releaseReservation = reserveDailyQuota(ip, selectedModel)
   try {
     const upstreamRes = await fetch(joinUrl(config.freeBaseUrl, '/chat/completions'), {
       method: 'POST',
@@ -317,6 +324,9 @@ function handleConfig(req, res) {
     ratePerMinute: admin.enabledModels()[0]?.ratePerMinute ?? config.ratePerMinute,
     accessCodeRequired: config.accessCode !== '',
     labAvailable: lab.enabled,
+    webSearchAvailable: Boolean(config.deepseekApiKey),
+    webSearchRatePerMinute: config.webSearchRatePerMinute,
+    webSearchDailyRequestsPerIp: config.webSearchDailyRequestsPerIp,
   })
 }
 
@@ -468,6 +478,10 @@ const server = http.createServer(async (req, res) => {
       }
       if (pathname === '/api/v1/chat/completions' && req.method === 'POST') {
         await handleChatCompletions(req, res)
+        return
+      }
+      if (pathname === '/api/tools/web-search' && req.method === 'POST') {
+        await handleWebSearch(req, res)
         return
       }
       if (pathname === '/api/config' && req.method === 'GET') {
