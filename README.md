@@ -17,7 +17,7 @@ HOST=127.0.0.1 PORT=18787 DATA_DIR=../data TRUST_PROXY=false npm start
 
 打开 `http://127.0.0.1:18787`。HTTP 集成测试会访问构建后的首页，因此首次运行测试前需要先构建前端。配置优先级为环境变量、`server/config.json`、默认值；示例见 `.env.example` 和 `server/config.json.example`。启动命令不会自动加载 `.env`。免费模型、管理后台、统计账本和酒馆预览需分别配置。
 
-联网搜索：在服务端环境变量 `DEEPSEEK_API_KEY` 或私有 `server/config.json` 的 `deepseekApiKey` 中填写 DeepSeek 官方密钥，重启后端并刷新网页后启用。写卡 agent 可通过 `web_search` 按需查询资料；自带 API 和站内免费模型共用这项能力，搜索密钥始终保留在后端。搜索按 [DeepSeek Search API](https://api-docs.deepseek.com/guides/search/) 单独计费。默认每 IP 每分钟 6 次、每日 30 次成功且非空的搜索，可用 `WEB_SEARCH_RATE_PER_MINUTE` / `WEB_SEARCH_DAILY_REQUESTS_PER_IP` 调整；额度与创作模型独立。
+联网搜索：在服务端环境变量 `DEEPSEEK_API_KEY` 或私有 `server/config.json` 的 `deepseekApiKey` 中填写 DeepSeek 官方密钥，重启后端并刷新网页后启用。写卡 agent 可通过 `web_search` 按需查询资料；自带 API 和站内免费模型共用这项能力，搜索密钥始终保留在后端。搜索按 [DeepSeek Search API](https://api-docs.deepseek.com/guides/search/) 单独计费。默认每 IP 每分钟 20 次、每日 30 次成功且非空的搜索，可用 `WEB_SEARCH_RATE_PER_MINUTE` / `WEB_SEARCH_DAILY_REQUESTS_PER_IP` 调整；额度与创作模型独立。
 
 ## 目录
 
